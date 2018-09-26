@@ -13,19 +13,6 @@
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Launch Program (NO LP)",
-            "program": "${workspaceFolder}/server.js",
-            "preLaunchTask": "tsc: build - tsconfig.json",
-            "outFiles": [
-                "${workspaceFolder}/**/*.js"
-            ],
-            "args": [
-                "--nolp"
-            ]
         }
     ]
 }

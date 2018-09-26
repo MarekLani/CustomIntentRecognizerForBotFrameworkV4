@@ -1,9 +1,10 @@
 {
     "name": "tt-bot",
     "dependencies": {
-        "botbuilder": "^4.0.0-preview1.1",
-        "botbuilder-ai": "^4.0.0-preview1.2",
-        "botbuilder-dialogs": "^4.0.0-preview1.2",
+        "botbuilder": "^4.0.6",
+        "botbuilder-ai": "^4.0.6",
+        "botbuilder-dialogs": "^4.0.6",
+        "botbuilder-sentimentmiddleware": "^1.0.6",
         "dotenv": "^2.0.0",
         "node-agent-sdk": "^1.0.4",
         "restify": "^4.3.0",

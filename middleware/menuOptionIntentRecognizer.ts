@@ -27,10 +27,10 @@ export class MenuOptionIntentRecognizer extends MiddlewareSet{
         let invertedMap = MenuOptions.InvertMenuOptionsMap()
         if(context.activity.text != undefined && invertedMap[context.activity.text])
         {
-            context.services.set(this.cacheKey,invertedMap[context.activity.text]);
+            context.turnState.set(this.cacheKey,invertedMap[context.activity.text]);
         }
         else{
-            context.services.set(this.cacheKey,undefined);
+            context.turnState.set(this.cacheKey,undefined);
         }
     }
 
@@ -40,6 +40,6 @@ export class MenuOptionIntentRecognizer extends MiddlewareSet{
      */
     getIntent(context)
     {
-        return context.services.get(this.cacheKey);
+        return context.turnState.get(this.cacheKey);
     }
 }

@@ -69,10 +69,10 @@ export class MenuOptionIntentRecognizer extends MiddlewareSet{
         let invertedMap = MenuOptions.InvertMenuOptionsMap()
         if(context.activity.text != undefined && invertedMap[context.activity.text])
         {
-            context.services.set(this.cacheKey,invertedMap[context.activity.text]);
+            context.turnState.set(this.cacheKey,invertedMap[context.activity.text]);
         }
         else{
-            context.services.set(this.cacheKey,undefined);
+            context.turnState.set(this.cacheKey,undefined);
         }
     }
 
@@ -82,12 +82,12 @@ export class MenuOptionIntentRecognizer extends MiddlewareSet{
      */
     getIntent(context)
     {
-        return context.services.get(this.cacheKey);
+        return context.turnState.get(this.cacheKey);
     }
 }
 ```
 
-Main message processing logic is defined in App.ts file. First we create instances of LUIS recognizer and our custom Menu Option Intent Recognizer, which is later added to middleware stack. Notice in message processing logic defined in callback functions of server.post function, how the LUIS recognizer is called only in case the custom recognizer was not capable to recognize the intent ( when user used natural language input) .
+Main message processing logic is defined in App.ts file. First we create instances of LUIS recognizer and our custom Menu Option Intent Recognizer, which is later added to middleware stack. Notice in message processing logic defined in callback functions of server.post function, how the LUIS recognizer is called only in case the custom recognizer was not capable to recognize the intent ( when user used natural language input). 
 
 ```typescript
 import {BotFrameworkAdapter, ConversationState, MemoryStorage} from 'botbuilder';
@@ -98,16 +98,15 @@ import { Payments } from './dialogs/Payments';
 import { Cards } from './dialogs/Cards';
 import { Accounts } from './dialogs/Accounts';
 import { Help } from './dialogs/Help';
-
 import { DialogSet } from 'botbuilder-dialogs';
-import { LuisRecognizer } from 'botbuilder-ai';
+import { LuisRecognizer } from 'botbuilder-ai'
 
 const luisRecognizer: LuisRecognizer = new LuisRecognizer({
-    appId: process.env.LUISAppId,
-    subscriptionKey: process.env.LUISSubscriptionKey,
-    serviceEndpoint: 'https://westeurope.api.cognitive.microsoft.com/' || process.env.LUISEndpoint,
-    verbose: true
+    applicationId: process.env.LUISAppId,
+    endpointKey:  process.env.LUISEndpointKey,
+    endpoint: process.env.LUISEndpoint,
 });
+
 
 // Create server
 let server = restify.createServer();
@@ -128,19 +127,21 @@ const botFrameworkAdapter = new BotFrameworkAdapter({
 
 const menuOptionIntentRecognizer = new MenuOptionIntentRecognizer();
 
-// Add conversation state middleware
-const conversationState = new ConversationState<MyState>(new MemoryStorage());
-botFrameworkAdapter.use(conversationState);
+
+const conversationState = new ConversationState(new MemoryStorage());
+// Create a property used to track state.
+const dialogState = conversationState.createProperty('dialogState');
+
 //botFrameworkAdapter.use(sentimentAnalysisMiddleware);
 botFrameworkAdapter.use(menuOptionIntentRecognizer);
 
 //Creating dialogs
-const dialogSet = new DialogSet();
-dialogSet.add('TopMenu', new TopMenu(conversationState));
-dialogSet.add('Accounts', new Accounts(conversationState));
-dialogSet.add('Payments', new Payments(conversationState));
-dialogSet.add('Cards', new Cards(conversationState));
-dialogSet.add('Help', new Help(conversationState));
+const dialogSet = new DialogSet(dialogState);
+dialogSet.add(new TopMenu(conversationState));
+dialogSet.add(new Accounts(conversationState));
+dialogSet.add(new Payments(conversationState));
+dialogSet.add(new Cards(conversationState));
+dialogSet.add(new Help(conversationState));
 
 
 // Events from Microsoft Bot connector
@@ -149,16 +150,17 @@ server.post("/api/messages", (request, response) => {
         const isMessage: boolean = context.activity.type === 'message';
 
         if (isMessage) {
-            const state = conversationState.get(context);
-            const dialogContext = dialogSet.createContext(context, state);
-            
-            if (state.activeDialog && state.activeDialog != '') {
-                // Continue the active dialog
-                await dialogContext.continue();
-            }
-            else{
-                let intent = undefined; 
+            // var prop = conversationState.createProperty('prop');
+            // prop.set(context,'value');
 
+            
+            const dialogContext = await dialogSet.createContext(context);
+            
+            dialogContext.continueDialog();
+                  // Default action
+            if (!context.responded && isMessage) {
+          
+                let intent = undefined; 
                 let menuIntent = menuOptionIntentRecognizer.getIntent(context)
                 if(menuIntent != undefined)
                 {
@@ -171,39 +173,31 @@ server.post("/api/messages", (request, response) => {
                 }
                 switch (intent) {
                     case "accounts":
-                        state.activeDialog = 'Accounts';
-                        await dialogContext.begin('Accounts');
+                        await dialogContext.beginDialog('Accounts');
                         break;  
                     case "cards":
-                        state.activeDialog = 'Cards';
-                        await dialogContext.begin('Cards');
+                        await dialogContext.beginDialog('Cards');
                         break;   
                     case "payments":
-                        state.activeDialog = 'Payments';
-                        await dialogContext.begin('Payments');
+                        await dialogContext.beginDialog('Payments');
                         break;   
                     case "help":
-                        state.activeDialog = 'Help';
-                        await dialogContext.begin('Help');
+                        await dialogContext.beginDialog('Help');
                         break;   
                     case "none":
                         await dialogContext.context.sendActivity(`I did not get that! Replying with main menu`);
-                        state.activeDialog = 'TopMenu';
-                        await dialogContext.begin('TopMenu');
+                        await dialogContext.beginDialog('TopMenu');
                         break;  
-                }
-            }
+                    default:
+                        await dialogContext.context.sendActivity(`I did not get that! Replying with main menu`);
+                        await dialogContext.beginDialog('TopMenu');
+                        break;  
 
-            if (!context.responded) {
-                 if (!context.responded && isMessage) {
-                    state.activeDialog = 'TopMenu';
-                    await dialogContext.begin('TopMenu');
                 }
             }
         }
     });
 });
-
 ```
 
 
