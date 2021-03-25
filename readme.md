@@ -4,7 +4,7 @@ This repo contains sample bot application built using Microsoft's Bot Framework 
 
 Sample is using custom intent recognizer, to determine what option has been selected from top menu dialog. To navigate further in the dialog chains users can either choose from the list of menu options or type  command in natural language which gets recognize by LUIS recognizer. 
 
-Custom intent recognizer is used as a middleware, what means that intent gets recognized for every incoming message. If it is undefined, only then we call LUIS recognizer to process incoming message with natural language processing. We use this flow for two reasons. First is, that people tend to use menu and buttons over natural language commands. For buttons we can define specific post back value, which gets recognized by custom intent recognizer and there is no reason to call LUIS recognizer then. Second reason is, that LUIS service is priced based on number of calls, so it makes sense to call it only if really necessary to limit the number of calls. When building chat bots, it is definitely isn't a good pattern to be dependent purely on natural language processing neither is  good pattern to use LUIS recognizer as a part of middleware.
+Custom intent recognizer is used as a middleware, what means that intent gets recognized for every incoming message. If it is undefined, only then we call LUIS recognizer to process incoming message with natural language processing. We use this flow for two reasons. First is that people tend to use menu and buttons over natural language commands. For buttons we can define specific post back value, which gets recognized by custom intent recognizer and there is no reason to call LUIS recognizer then. Second reason is, that LUIS service is priced based on number of calls, so it makes sense to call it only if really necessary to limit the number of calls. When building chat bots, it definitely isn't a good pattern to be dependent purely on natural language processing neither it is a good pattern to use LUIS recognizer as a part of middleware.
 
 Read about the **middleware** in Bot Framework in [this article](https://docs.microsoft.com/en-us/azure/bot-service/bot-builder-concept-middleware?view=azure-bot-service-4.0) within documentation. 
 
@@ -87,7 +87,7 @@ export class MenuOptionIntentRecognizer extends MiddlewareSet{
 }
 ```
 
-Main message processing logic is defined in App.ts file. First we create instances of LUIS recognizer and our custom Menu Option Intent Recognizer, which is later added to middleware stack. Notice in message processing logic defined in callback functions of server.post function, how the LUIS recognizer is called only in case the custom recognizer was not capable to recognize the intent ( when user used natural language input). 
+Main message processing logic is defined in App.ts file. First we create instances of LUIS recognizer and our custom Menu Option Intent Recognizer, which is later added to middleware stack. Notice message processing logic defined in callback functions of server.post function, how the LUIS recognizer is called only in case the custom recognizer was not capable to recognize the intent ( when user used natural language input). 
 
 ```typescript
 import {BotFrameworkAdapter, ConversationState, MemoryStorage} from 'botbuilder';
